@@ -4,6 +4,7 @@ protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc'
     }
+    generatedFilesBaseDir = "${projectDir}/generated_proto/"
     plugins {
         grpc {
             artifact = 'io.grpc:protoc-gen-grpc-java'
@@ -23,6 +24,14 @@ protobuf {
     }
 }
 
+idea {
+    module {
+        sourceDirs += file("${projectDir}/generated_proto/main/java")
+        sourceDirs += file("${projectDir}/generated_proto/main/grpc")
+        generatedSourceDirs += file("${projectDir}/generated_proto/main/java")
+        generatedSourceDirs += file("${projectDir}/generated_proto/main/grpc")
+    }
+}
 
 dependencies {
     protobuf 'com.google.api.grpc:proto-google-common-protos'
@@ -30,6 +39,9 @@ dependencies {
     compile 'io.grpc:grpc-netty'
     compile 'io.grpc:grpc-protobuf'
     compile 'io.grpc:grpc-stub'
+
+    compile 'org.slf4j:slf4j-api'
+    compile 'org.slf4j:slf4j-simple'
 
     testCompile 'io.grpc:grpc-testing'
     testCompile 'junit:junit'
