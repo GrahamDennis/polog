@@ -1,0 +1,37 @@
+apply plugin: 'com.google.protobuf'
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java'
+        }
+    }
+    generateProtoTasks {
+        all().each { task -> 
+            task.plugins {
+                grpc { }
+            }
+            task.builtins {
+                java {
+                    option 'annotate_code'
+                }
+            }
+        }
+    }
+}
+
+
+dependencies {
+    protobuf 'com.google.api.grpc:proto-google-common-protos'
+    compile 'com.google.protobuf:protobuf-java'
+    compile 'io.grpc:grpc-netty'
+    compile 'io.grpc:grpc-protobuf'
+    compile 'io.grpc:grpc-stub'
+
+    testCompile 'io.grpc:grpc-testing'
+    testCompile 'junit:junit'
+    testCompile 'org.mockito:mockito-core'
+}
