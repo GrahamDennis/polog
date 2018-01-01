@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.log";
+option java_outer_classname = "LogProto";
+option objc_class_prefix = "GDL";
+
+package log;
+
+import "google/api/annotations.proto";
+
+service Broker {
+    rpc AddRecords (AddRecordsRequest) returns (AddRecordsResponse) {
+        option (google.api.http) = {
+            post: "/v1/broker/records"
+            body: "*"
+        };
+    }
+
+    rpc ListRecords (ListRecordsRequest) returns (stream Record) {
+        option (google.api.http) = {
+            post: "/v1/broker/records/list"
+            body: "*"
+        };
+    }
+}
+
+message Record {
+    string name = 1;
+    string value = 2;
+}
+
+message AddRecordsRequest {
+    string topic = 1;
+    repeated Record records = 2;
+}
+
+message AddRecordsResponse {
+    string topic = 1;
+}
+
+message ListRecordsRequest {
+    string topic = 1;
+}
+
+message ListRecordsResponse {
+    string topic = 1;
+    repeated Record records = 2;
+}

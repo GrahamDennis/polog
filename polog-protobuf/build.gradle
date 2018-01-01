@@ -40,6 +40,8 @@ dependencies {
     compile 'io.grpc:grpc-protobuf'
     compile 'io.grpc:grpc-stub'
 
+    compile 'io.reactivex.rxjava2:rxjava'
+
     compile 'org.slf4j:slf4j-api'
     compile 'org.slf4j:slf4j-simple'
 
