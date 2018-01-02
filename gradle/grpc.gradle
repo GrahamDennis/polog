@@ -34,18 +34,8 @@ idea {
 }
 
 dependencies {
-    protobuf 'com.google.api.grpc:proto-google-common-protos'
     compile 'com.google.protobuf:protobuf-java'
     compile 'io.grpc:grpc-netty'
     compile 'io.grpc:grpc-protobuf'
     compile 'io.grpc:grpc-stub'
-
-    compile 'io.reactivex.rxjava2:rxjava'
-
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
-
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-core'
 }

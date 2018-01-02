@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.log;
+package io.grpc.examples.broker;
 
 import com.google.common.collect.Maps;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -69,30 +70,31 @@ public final class BrokerImpl extends BrokerGrpc.BrokerImplBase {
 
     @Override
     public void listRecords(ListRecordsRequest request, StreamObserver<Record> responseObserver) {
-        String topic = request.getTopic();
+        getRecordReplaySubject(request.getTopic())
+                .subscribe(new Observer<Record>() {
+                    @Override
+                    public void onSubscribe(Disposable disposable) {
+                        ServerCallStreamObserver<Record> serverCallStreamObserver =
+                                (ServerCallStreamObserver<Record>) responseObserver;
 
-        ReplaySubject<Record> recordReplaySubject = getRecordReplaySubject(topic);
+                        serverCallStreamObserver.setOnCancelHandler(disposable::dispose);
+                    }
 
-        recordReplaySubject.subscribe(new Observer<Record>() {
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
+                    @Override
+                    public void onNext(Record record) {
+                        responseObserver.onNext(record);
+                    }
 
-            @Override
-            public void onNext(Record record) {
-                responseObserver.onNext(record);
-            }
+                    @Override
+                    public void onError(Throwable throwable) {
+                        responseObserver.onError(throwable);
+                    }
 
-            @Override
-            public void onError(Throwable throwable) {
-                responseObserver.onError(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                responseObserver.onCompleted();
-            }
-        });
+                    @Override
+                    public void onComplete() {
+                        responseObserver.onCompleted();
+                    }
+                });
     }
 
     public void stop() {

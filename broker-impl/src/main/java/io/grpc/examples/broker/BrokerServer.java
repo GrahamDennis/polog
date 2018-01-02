@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.log;
+package io.grpc.examples.broker;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
