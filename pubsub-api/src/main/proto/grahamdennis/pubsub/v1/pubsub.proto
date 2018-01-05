@@ -1,0 +1,151 @@
+// Heavily derived from the Google PubSub API
+
+syntax = "proto3";
+
+package grahamdennis.pubsub.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+
+//option java_multiple_files = true;
+option java_package = "me.grahamdennis.pubsub.v1";
+option java_outer_classname = "PubSubProto";
+
+service PubSub {
+    rpc CreateTopic(Topic) returns (Topic) {
+        option (google.api.http) = {
+            put: "/v1/{name=projects/*/topics/*}"
+            body: "*"
+        };
+    }
+
+    rpc UpdateTopic(UpdateTopicRequest) returns (Topic) {
+        option (google.api.http) = {
+            patch: "/v1/{name=projects/*/topics/*}"
+            body: "topic"
+        };
+    }
+
+    // Gets the configuration of a topic.
+    rpc GetTopic(GetTopicRequest) returns (Topic) {
+        option (google.api.http) = {
+            get: "/v1/{topic=projects/*/topics/*}"
+        };
+    }
+
+    // Lists matching topics.
+    rpc ListTopics(ListTopicsRequest) returns (ListTopicsResponse) {
+        option (google.api.http) = {
+            get: "/v1/{project=projects/*}/topics"
+        };
+    }
+
+    // Get a message
+    rpc GetMessage(GetMessageRequest) returns (Message) {
+        option (google.api.http) = {
+            get: "/v1/{topic=projects/*/topics/*}/messages/{message_id}"
+        };
+    }
+
+    // Stream messages.
+    rpc StreamMessages(StreamMessagesRequest) returns (stream Message) {
+        option (google.api.http) = {
+            post: "/v1/{topic=projects/*/topics/*}/messages:stream"
+        };
+    }
+
+    // List messages
+    rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
+        option (google.api.http) = {
+            get: "/v1/{topic=projects/*/topics/*}/messages"
+        };
+    }
+}
+
+message Topic {
+    // The name of the topic. It must have the format
+    // `"projects/{project}/topics/{topic}"`. `{topic}` must start with a letter,
+    // and contain only letters (`[A-Za-z]`), numbers (`[0-9]`), dashes (`-`),
+    // underscores (`_`), periods (`.`), tildes (`~`), plus (`+`) or percent
+    // signs (`%`). It must be between 3 and 255 characters in length, and it
+    // must not start with `"goog"`.
+    string name = 1;
+
+    // User labels.
+    map<string, string> labels = 2;
+}
+
+message Message {
+    // message_id starts from 1.
+    int32 message_id = 1;
+
+    string value = 2;
+}
+
+// Request for the GetTopic method.
+message GetTopicRequest {
+    // The name of the topic to get.
+    // Format is `projects/{project}/topics/{topic}`.
+    string topic = 1;
+}
+
+// Request for the UpdateTopic method.
+message UpdateTopicRequest {
+    // The topic to update.
+    Topic topic = 1;
+
+    // Indicates which fields in the provided topic to update.
+    // Must be specified and non-empty.
+    google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request for the `ListTopics` method.
+message ListTopicsRequest {
+    // The name of the cloud project that topics belong to.
+    // Format is `projects/{project}`.
+    string project = 1;
+
+    // Maximum number of topics to return.
+    int32 page_size = 2;
+
+    // The value returned by the last `ListTopicsResponse`; indicates that this is
+    // a continuation of a prior `ListTopics` call, and that the system should
+    // return the next page of data.
+    string page_token = 3;
+}
+
+// Response for the `ListTopics` method.
+message ListTopicsResponse {
+    // The resulting topics.
+    repeated Topic topics = 1;
+
+    // If not empty, indicates that there may be more topics that match the
+    // request; this value should be passed in a new `ListTopicsRequest`.
+    string next_page_token = 2;
+}
+
+message GetMessageRequest {
+    string topic = 1;
+
+    int32 message_id = 2;
+}
+
+message StreamMessagesRequest {
+    string topic = 1;
+
+    int32 page_size = 2;
+
+    int32 last_seen_message_id = 3;
+}
+
+message ListMessagesRequest {
+    string topic = 1;
+
+    int32 page_size = 2;
+
+    int32 last_seen_message_id = 3;
+}
+
+message ListMessagesResponse {
+    repeated Message messages = 1;
+}

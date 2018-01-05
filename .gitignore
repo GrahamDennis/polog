@@ -204,3 +204,6 @@ gradle-app.setting
 
 # protobuf
 **/generated_proto/
+
+# Immutables
+**/generated_src/

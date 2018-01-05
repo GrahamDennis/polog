@@ -3,3 +3,6 @@ include 'helloworld-impl'
 
 include 'broker-api'
 include 'broker-impl'
+
+include 'pubsub-api'
+include 'pubsub-impl'
