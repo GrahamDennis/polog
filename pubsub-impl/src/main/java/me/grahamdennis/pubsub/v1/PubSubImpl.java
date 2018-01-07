@@ -16,37 +16,36 @@
 
 package me.grahamdennis.pubsub.v1;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import io.grpc.Status;
-import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.SingleObserver;
+import io.reactivex.disposables.Disposable;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import me.grahamdennis.pubsub.core.LogStream;
+import me.grahamdennis.pubsub.core.Message;
+import me.grahamdennis.pubsub.core.PubSub;
+import org.reactivestreams.Subscription;
 
-public class PubSubImpl extends PubSubGrpc.PubSubImplBase {
+public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
 
-    private final ConcurrentMap<Topic, List<Message>> messageStore;
+    private final PubSub pubSub;
 
-    public PubSubImpl create() {
-        return new PubSubImpl(Maps.newConcurrentMap());
-    }
-
-    public PubSubImpl(
-            ConcurrentMap<Topic, List<Message>> messageStore) {
-        this.messageStore = messageStore;
+    public PubSubImpl(PubSub pubSub) {
+        this.pubSub = pubSub;
     }
 
     @Override
     public void createTopic(PubSubProto.Topic request, StreamObserver<PubSubProto.Topic> responseObserver) {
-        // FIXME(gdennis): store topic labels.
-        Topic topic = Topic.of(request.getName());
+        // FIXME(gdennis): store topicName labels.
+        TopicName topicName = TopicName.of(request.getName());
 
-        messageStore.computeIfAbsent(topic, (theTopic) -> Lists.newArrayList());
+        pubSub.createTopic(topicName);
 
-        responseObserver.onNext(toProto(topic));
-        responseObserver.onCompleted();
+        success(responseObserver, toProto(topicName));
     }
 
     @Override
@@ -58,21 +57,13 @@ public class PubSubImpl extends PubSubGrpc.PubSubImplBase {
 
     @Override
     public void getTopic(PubSubProto.GetTopicRequest request, StreamObserver<PubSubProto.Topic> responseObserver) {
-        try {
-            Topic topic = getTopic(request.getTopic());
-            responseObserver.onNext(toProto(topic));
-            responseObserver.onCompleted();
-        } catch (StatusException e) {
-            responseObserver.onError(e);
-        }
-    }
+        TopicName topicName = TopicName.of(request.getTopic());
 
-    private Topic getTopic(String name) throws StatusException {
-        Topic topic = Topic.of(name);
-        if (!messageStore.containsKey(topic)) {
-            throw Status.NOT_FOUND.withDescription("Unknown Topic").asException();
+        Optional<LogStream> maybeLogStream = pubSub.getTopic(topicName);
+        if (maybeLogStream.isPresent()) {
+            success(responseObserver, toProto(topicName));
         } else {
-            return topic;
+            responseObserver.onError(Errors.unknownTopic().asException());
         }
     }
 
@@ -81,75 +72,153 @@ public class PubSubImpl extends PubSubGrpc.PubSubImplBase {
             StreamObserver<PubSubProto.ListTopicsResponse> responseObserver) {
         PubSubProto.ListTopicsResponse.Builder builder = PubSubProto.ListTopicsResponse.newBuilder();
 
-        messageStore.keySet().forEach(topic -> builder.addTopics(toProto(topic)));
+        pubSub.listTopics()
+                .forEach(topicName -> builder.addTopics(toProto(topicName)));
 
-        responseObserver.onNext(builder.build());
-        responseObserver.onCompleted();
+        success(responseObserver, builder.build());
     }
 
     @Override
     public void getMessage(PubSubProto.GetMessageRequest request,
             StreamObserver<PubSubProto.Message> responseObserver) {
-        Topic topic = Topic.of(request.getTopic());
-        List<Message> messages = messageStore.get(topic);
-        if (messages == null) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription("Unknown Topic").asException());
+        TopicName topicName = TopicName.of(request.getTopic());
+
+        Optional<LogStream> maybeLogStream = pubSub.getTopic(topicName);
+        if (!maybeLogStream.isPresent()) {
+            responseObserver.onError(Errors.unknownTopic().asException());
             return;
         }
 
-        int messageId = request.getMessageId();
-        Message message;
-        // FIXME(gdennis): Move logic to a TopicData class or similar.
-        synchronized (messages) {
-            message = messages.get(messageId);
-        }
-        if (message == null) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription("Unknown message").asException());
+        if (request.getMessageId() < 1) {
+            responseObserver.onError(Errors.illegalMessageId().asException());
             return;
         }
 
-        responseObserver.onNext(toProto(messageId, message));
-        responseObserver.onCompleted();
+        maybeLogStream.get()
+                .afterMessageId(request.getMessageId() - 1)
+                .firstOrError()
+                .map(this::toProto)
+                .subscribe(toSingleObserver(responseObserver));
     }
 
     @Override
     public void streamMessages(PubSubProto.StreamMessagesRequest request,
             StreamObserver<PubSubProto.Message> responseObserver) {
-        Topic topic = Topic.of(request.getTopic());
-        List<Message> messages = messageStore.get(topic);
-        if (messages == null) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription("Unknown Topic").asException());
+        TopicName topicName = TopicName.of(request.getTopic());
+
+        Optional<LogStream> maybeLogStream = pubSub.getTopic(topicName);
+        if (!maybeLogStream.isPresent()) {
+            responseObserver.onError(Errors.unknownTopic().asException());
             return;
         }
 
-        int lastSeenMessageId = request.getLastSeenMessageId();
-        List<Message> unseenMessages;
-        // FIXME(gdennis): Move logic to a TopicData class or similar.
-        synchronized (messages) {
-            if (lastSeenMessageId > messages.size()) {
-                responseObserver.onError(Status.NOT_FOUND.withDescription("Unknown message").asException());
-                return;
-            }
-            unseenMessages = ImmutableList.copyOf(messages.subList(lastSeenMessageId, messages.size()));
-        }
-        for (Message message : unseenMessages) {
-            responseObserver.onNext(toProto(lastSeenMessageId++, message));
+        maybeLogStream.get()
+                .afterMessageId(request.getLastSeenMessageId() - 1)
+                .map(this::toProto)
+                .subscribe(toSubscriber(responseObserver));
+    }
+
+    @Override
+    public void publish(PubSubProto.PublishRequest request,
+            StreamObserver<PubSubProto.PublishResponse> responseObserver) {
+        TopicName topicName = TopicName.of(request.getTopic());
+
+        Optional<LogStream> maybeLogStream = pubSub.getTopic(topicName);
+        if (!maybeLogStream.isPresent()) {
+            responseObserver.onError(Errors.unknownTopic().asException());
+            return;
         }
 
-        // FIXME(gdennis): listen for new messages.
+        List<String> messages = request.getMessagesList()
+                .stream()
+                .map(PubSubProto.Message::getValue)
+                .collect(Collectors.toList());
+
+        Flowable.fromIterable(messages)
+                .lift(maybeLogStream.get().storeToLogStreamOperator())
+                .reduce(PubSubProto.PublishResponse.newBuilder(), PubSubProto.PublishResponse.Builder::addMessageIds)
+                .map(PubSubProto.PublishResponse.Builder::build)
+                .subscribe(toSingleObserver(responseObserver));
+    }
+
+    public void stop() {
+        pubSub.stop();
+    }
+
+    private PubSubProto.Topic toProto(TopicName topicName) {
+        return PubSubProto.Topic.newBuilder()
+                .setName(topicName.name())
+                .build();
+    }
+
+    private PubSubProto.Message toProto(Message message) {
+        return PubSubProto.Message.newBuilder()
+                .setMessageId(message.id()+1)
+                .setValue(message.value())
+                .build();
+    }
+
+    private <T> void success(StreamObserver<T> responseObserver, T value) {
+        responseObserver.onNext(value);
         responseObserver.onCompleted();
     }
 
-    private PubSubProto.Topic toProto(Topic topic) {
-        return PubSubProto.Topic.newBuilder()
-                .setName(topic.name())
-                .build();
+    private static <T> FlowableSubscriber<T> toSubscriber(
+            StreamObserver<T> responseObserver) {
+        return new FlowableSubscriber<T>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                // FIXME(gdennis): do this properly
+                s.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(T t) {
+                responseObserver.onNext(t);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                responseObserver.onError(t);
+            }
+
+            @Override
+            public void onComplete() {
+                responseObserver.onCompleted();
+            }
+        };
     }
 
-    private PubSubProto.Message toProto(int messageId, Message message) {
-        return PubSubProto.Message.newBuilder()
-                .setMessageId(messageId)
-                .setValue(message.value())
-                .build();
+    private static <T> SingleObserver<T> toSingleObserver(StreamObserver<T> responseObserver) {
+        return new SingleObserver<T>() {
+            @Override
+            public void onSubscribe(Disposable d) {}
+
+            @Override
+            public void onSuccess(T t) {
+                responseObserver.onNext(t);
+                responseObserver.onCompleted();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                responseObserver.onError(e);
+            }
+        };
+    }
+
+    private static class Errors {
+
+        private static Status unknownTopic() {
+            return Status.NOT_FOUND.withDescription("Unknown topic");
+        }
+
+        private static Status unknownMessage() {
+            return Status.NOT_FOUND.withDescription("Unknown message id");
+        }
+
+        public static Status illegalMessageId() {
+            return Status.INVALID_ARGUMENT.withDescription("Illegal message id");
+        }
     }
 }

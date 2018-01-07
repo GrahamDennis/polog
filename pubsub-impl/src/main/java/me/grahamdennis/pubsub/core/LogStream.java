@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.pubsub.v1;
+package me.grahamdennis.pubsub.core;
 
-import me.grahamdennis.immutables.ImmutablesStyle;
-import org.immutables.value.Value;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableOperator;
 
-@Value.Immutable(prehash = true)
-@ImmutablesStyle
-public interface Topic {
-    @Value.Parameter
-    String name();
+public interface LogStream {
 
-    static Topic of(String name) {
-        return ImmutableTopic.create(name);
-    }
+    FlowableOperator<Long, String> storeToLogStreamOperator();
+
+    Flowable<Message> fromBeginning();
+    Flowable<Message> afterMessageId(long lastSeenMessageId);
+
+    void stop();
 }

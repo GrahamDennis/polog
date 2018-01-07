@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.pubsub.v1;
+package me.grahamdennis.pubsub.core;
 
 import me.grahamdennis.immutables.ImmutablesStyle;
 import org.immutables.value.Value;
@@ -23,9 +23,12 @@ import org.immutables.value.Value;
 @ImmutablesStyle
 public interface Message {
     @Value.Parameter
+    long id();
+
+    @Value.Parameter
     String value();
 
-    static Message of(String value) {
-        return ImmutableMessage.create(value);
+    static Message of(long messageId, String value) {
+        return ImmutableMessage.create(messageId, value);
     }
 }

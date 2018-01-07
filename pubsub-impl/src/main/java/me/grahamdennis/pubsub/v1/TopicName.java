@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.pubsub;
+package me.grahamdennis.pubsub.v1;
 
-public interface TopicData {
+import me.grahamdennis.immutables.ImmutablesStyle;
+import org.immutables.value.Value;
 
-    long getMaximumMessageId();
+@Value.Immutable(prehash = true)
+@ImmutablesStyle
+public interface TopicName {
+    @Value.Parameter
+    String name();
 
-    List<>
+    static TopicName of(String name) {
+        return ImmutableTopicName.create(name);
+    }
 }
