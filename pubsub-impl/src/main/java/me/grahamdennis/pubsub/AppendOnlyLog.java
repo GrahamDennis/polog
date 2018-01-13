@@ -16,6 +16,7 @@
 
 package me.grahamdennis.pubsub;
 
+import java.util.Optional;
 import java.util.function.ObjLongConsumer;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -40,4 +41,6 @@ public interface AppendOnlyLog<E> {
 
     void subscribeToChanges(ObjLongConsumer<E> subscriber);
     void unsubscribeToChanges(ObjLongConsumer<E> subscriber);
+
+    Optional<E> getOrElseSubscribe(long index, ObjLongConsumer<E> subscriber);
 }

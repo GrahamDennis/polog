@@ -19,21 +19,22 @@ package me.grahamdennis.pubsub;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.ObjLongConsumer;
 import javax.annotation.Nullable;
 
-public final class AppendOnlyLogInMemory<E> implements AppendOnlyLog<E> {
+public final class InMemoryAppendOnlyLog<E> implements AppendOnlyLog<E> {
 
     private final List<E> delegate;
     private final Object mutex;
     private final Set<ObjLongConsumer<E>> subscribers;
 
     public static <E> AppendOnlyLog<E> create() {
-        return new AppendOnlyLogInMemory<>(Lists.newArrayList(), null, Sets.newConcurrentHashSet());
+        return new InMemoryAppendOnlyLog<>(Lists.newArrayList(), null, Sets.newConcurrentHashSet());
     }
 
-    public AppendOnlyLogInMemory(List<E> delegate, @Nullable Object mutex,
+    public InMemoryAppendOnlyLog(List<E> delegate, @Nullable Object mutex,
             Set<ObjLongConsumer<E>> subscribers) {
         this.delegate = delegate;
         this.mutex = mutex == null ? this : mutex;
@@ -77,6 +78,18 @@ public final class AppendOnlyLogInMemory<E> implements AppendOnlyLog<E> {
     public void unsubscribeToChanges(ObjLongConsumer<E> subscriber) {
         synchronized (mutex) {
             subscribers.remove(subscriber);
+        }
+    }
+
+    @Override
+    public Optional<E> getOrElseSubscribe(long index, ObjLongConsumer<E> subscriber) {
+        synchronized (mutex) {
+            if (index < delegate.size()) {
+                return Optional.of(delegate.get((int) index));
+            } else {
+                subscribers.add(subscriber);
+                return Optional.empty();
+            }
         }
     }
 }
