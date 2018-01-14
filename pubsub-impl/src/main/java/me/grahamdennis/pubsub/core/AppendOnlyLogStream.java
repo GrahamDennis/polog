@@ -18,7 +18,7 @@ package me.grahamdennis.pubsub.core;
 
 import io.reactivex.Flowable;
 import io.reactivex.FlowableOperator;
-import me.grahamdennis.pubsub.AppendOnlyLog;
+import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLog;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 

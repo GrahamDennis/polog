@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.pubsub;
+package me.grahamdennis.pubsub.appendonlylog;
 
 import java.util.Optional;
 import java.util.function.ObjLongConsumer;

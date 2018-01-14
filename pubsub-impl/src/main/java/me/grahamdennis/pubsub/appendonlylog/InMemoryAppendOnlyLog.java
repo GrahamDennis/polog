@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.pubsub;
+package me.grahamdennis.pubsub.appendonlylog;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
