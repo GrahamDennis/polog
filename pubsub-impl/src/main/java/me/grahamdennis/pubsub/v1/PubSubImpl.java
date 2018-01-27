@@ -26,8 +26,8 @@ import io.reactivex.disposables.Disposable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLogMessage;
 import me.grahamdennis.pubsub.core.LogStream;
-import me.grahamdennis.pubsub.core.Message;
 import me.grahamdennis.pubsub.core.PubSub;
 import org.reactivestreams.Subscription;
 
@@ -152,7 +152,7 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
                 .build();
     }
 
-    private PubSubProto.Message toProto(Message message) {
+    private PubSubProto.Message toProto(AppendOnlyLogMessage<String> message) {
         return PubSubProto.Message.newBuilder()
                 .setMessageId(message.id()+1)
                 .setValue(message.value())

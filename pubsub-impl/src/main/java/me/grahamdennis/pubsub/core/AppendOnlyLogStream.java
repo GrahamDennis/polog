@@ -20,6 +20,7 @@ import io.reactivex.Flowable;
 import io.reactivex.FlowableOperator;
 import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLog;
 import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLogFlowable;
+import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLogMessage;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -58,14 +59,13 @@ public final class AppendOnlyLogStream implements LogStream {
     }
 
     @Override
-    public Flowable<Message> fromBeginning() {
+    public Flowable<AppendOnlyLogMessage<String>> fromBeginning() {
         return afterMessageId(-1L);
     }
 
     @Override
-    public Flowable<Message> afterMessageId(long lastSeenMessageId) {
-        return new AppendOnlyLogFlowable<>(appendOnlyLog, lastSeenMessageId + 1)
-                .map(message -> Message.of(message.id(), message.value()));
+    public Flowable<AppendOnlyLogMessage<String>> afterMessageId(long lastSeenMessageId) {
+        return new AppendOnlyLogFlowable<>(appendOnlyLog, lastSeenMessageId + 1);
     }
 
     @Override

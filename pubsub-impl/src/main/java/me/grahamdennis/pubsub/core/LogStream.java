@@ -18,13 +18,14 @@ package me.grahamdennis.pubsub.core;
 
 import io.reactivex.Flowable;
 import io.reactivex.FlowableOperator;
+import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLogMessage;
 
 public interface LogStream {
 
     FlowableOperator<Long, String> storeToLogStreamOperator();
 
-    Flowable<Message> fromBeginning();
-    Flowable<Message> afterMessageId(long lastSeenMessageId);
+    Flowable<AppendOnlyLogMessage<String>> fromBeginning();
+    Flowable<AppendOnlyLogMessage<String>> afterMessageId(long lastSeenMessageId);
 
     void stop();
 }

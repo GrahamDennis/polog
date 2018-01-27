@@ -19,19 +19,20 @@ package me.grahamdennis.pubsub.core;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableOperator;
 import io.reactivex.processors.ReplayProcessor;
+import me.grahamdennis.pubsub.appendonlylog.AppendOnlyLogMessage;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 public final class SimpleLogStream implements LogStream {
 
-    private final ReplayProcessor<Message> messages;
+    private final ReplayProcessor<AppendOnlyLogMessage<String>> messages;
     private long nextMessageId;
 
     public static SimpleLogStream create() {
         return new SimpleLogStream(ReplayProcessor.create());
     }
 
-    public SimpleLogStream(ReplayProcessor<Message> messages) {
+    public SimpleLogStream(ReplayProcessor<AppendOnlyLogMessage<String>> messages) {
         this.messages = messages;
         this.nextMessageId = 0;
     }
@@ -63,12 +64,12 @@ public final class SimpleLogStream implements LogStream {
     }
 
     @Override
-    public Flowable<Message> fromBeginning() {
+    public Flowable<AppendOnlyLogMessage<String>> fromBeginning() {
         return messages;
     }
 
     @Override
-    public Flowable<Message> afterMessageId(long lastSeenMessageId) {
+    public Flowable<AppendOnlyLogMessage<String>> afterMessageId(long lastSeenMessageId) {
         return messages.skip(lastSeenMessageId + 1);
     }
 
@@ -82,7 +83,7 @@ public final class SimpleLogStream implements LogStream {
     private long addMessage(String messageString) {
         synchronized (this) {
             long messageId = nextMessageId++;
-            messages.onNext(Message.of(messageId, messageString));
+            messages.onNext(AppendOnlyLogMessage.of(messageId, messageString));
             return messageId;
         }
     }
