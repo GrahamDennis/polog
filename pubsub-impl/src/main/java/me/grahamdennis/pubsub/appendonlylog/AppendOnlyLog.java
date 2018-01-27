@@ -21,7 +21,7 @@ import java.util.function.ObjLongConsumer;
 import javax.annotation.concurrent.ThreadSafe;
 
 @ThreadSafe
-public interface AppendOnlyLog<E> {
+public interface AppendOnlyLog<E> extends AutoCloseable {
     /**
      * Atomically append an element to the log, and return its index in the log
      * @param element element to append to the end of the log

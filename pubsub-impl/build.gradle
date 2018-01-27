@@ -17,6 +17,7 @@
 dependencies {
     compile project(':pubsub-api')
     compile 'io.reactivex.rxjava2:rxjava'
+    compile 'org.rocksdb:rocksdbjni'
 
     compile 'org.slf4j:slf4j-api'
     compile 'org.slf4j:slf4j-simple'

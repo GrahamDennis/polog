@@ -92,4 +92,9 @@ public final class InMemoryAppendOnlyLog<E> implements AppendOnlyLog<E> {
             }
         }
     }
+
+    @Override
+    public void close() throws Exception {
+        // FIXME(gdennis): implement.
+    }
 }
