@@ -19,6 +19,7 @@ package me.grahamdennis.pubsub.core;
 import com.google.common.collect.Maps;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
+import me.grahamdennis.pubsub.appendonlylog.InMemoryAppendOnlyLog;
 import me.grahamdennis.pubsub.v1.TopicName;
 
 public final class PubSub {
@@ -35,7 +36,8 @@ public final class PubSub {
     }
 
     public void createTopic(TopicName topicName) {
-        topics.computeIfAbsent(topicName, (theTopicName) -> SimpleLogStream.create());
+        // topics.computeIfAbsent(topicName, (theTopicName) -> SimpleLogStream.create());
+        topics.computeIfAbsent(topicName, (theTopicName) -> new AppendOnlyLogStream(InMemoryAppendOnlyLog.create()));
     }
 
     public Optional<LogStream> getTopic(TopicName topicName) {

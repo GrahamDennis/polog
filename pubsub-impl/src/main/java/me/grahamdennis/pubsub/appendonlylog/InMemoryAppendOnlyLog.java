@@ -17,10 +17,10 @@
 package me.grahamdennis.pubsub.appendonlylog;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
 import javax.annotation.Nullable;
 
@@ -31,7 +31,7 @@ public final class InMemoryAppendOnlyLog<E> implements AppendOnlyLog<E> {
     private final Set<ObjLongConsumer<E>> subscribers;
 
     public static <E> AppendOnlyLog<E> create() {
-        return new InMemoryAppendOnlyLog<>(Lists.newArrayList(), null, Sets.newConcurrentHashSet());
+        return new InMemoryAppendOnlyLog<>(Lists.newArrayList(), null, ConcurrentHashMap.newKeySet());
     }
 
     public InMemoryAppendOnlyLog(List<E> delegate, @Nullable Object mutex,

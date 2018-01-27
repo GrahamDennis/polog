@@ -17,42 +17,19 @@
 package me.grahamdennis.pubsub.appendonlylog;
 
 import io.reactivex.Flowable;
-import io.reactivex.internal.fuseable.SimplePlainQueue;
-import io.reactivex.internal.queue.SpscArrayQueue;
 import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 public final class AppendOnlyLogFlowable<T> extends Flowable<AppendOnlyLogMessage<T>> {
     private final AppendOnlyLog<T> appendOnlyLog;
     private final long startingOffset;
-    private final int bufferSize;
 
-    public AppendOnlyLogFlowable(AppendOnlyLog<T> appendOnlyLog, long startingOffset, int bufferSize) {
+    public AppendOnlyLogFlowable(AppendOnlyLog<T> appendOnlyLog, long startingOffset) {
         this.appendOnlyLog = appendOnlyLog;
         this.startingOffset = startingOffset;
-        this.bufferSize = bufferSize;
     }
 
     @Override
     protected void subscribeActual(Subscriber<? super AppendOnlyLogMessage<T>> s) {
-        s.onSubscribe(new AppendOnlyLogFlowableSubscription<>());
-    }
-
-    private final class AppendOnlyLogFlowableSubscription<T> implements Subscription {
-        private final SimplePlainQueue<AppendOnlyLogMessage<T>> queue;
-
-        public AppendOnlyLogFlowableSubscription() {
-            this.queue = new SpscArrayQueue<>(bufferSize);
-        }
-
-        @Override
-        public void request(long n) {
-
-        }
-
-        @Override
-        public void cancel() {
-
-        }
+        s.onSubscribe(new AppendOnlyLogFlowableSubscription<>(appendOnlyLog, startingOffset, s));
     }
 }

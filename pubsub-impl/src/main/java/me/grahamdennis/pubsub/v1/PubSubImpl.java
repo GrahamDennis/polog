@@ -17,6 +17,7 @@
 package me.grahamdennis.pubsub.v1;
 
 import io.grpc.Status;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableSubscriber;
@@ -168,6 +169,9 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
         return new FlowableSubscriber<T>() {
             @Override
             public void onSubscribe(Subscription s) {
+                ServerCallStreamObserver<T> serverCallStreamObserver =
+                        (ServerCallStreamObserver<T>) responseObserver;
+                serverCallStreamObserver.setOnCancelHandler(s::cancel);
                 // FIXME(gdennis): do this properly
                 s.request(Long.MAX_VALUE);
             }
@@ -192,7 +196,11 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
     private static <T> SingleObserver<T> toSingleObserver(StreamObserver<T> responseObserver) {
         return new SingleObserver<T>() {
             @Override
-            public void onSubscribe(Disposable d) {}
+            public void onSubscribe(Disposable d) {
+                ServerCallStreamObserver<T> serverCallStreamObserver =
+                        (ServerCallStreamObserver<T>) responseObserver;
+                serverCallStreamObserver.setOnCancelHandler(d::dispose);
+            }
 
             @Override
             public void onSuccess(T t) {
