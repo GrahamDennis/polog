@@ -29,7 +29,7 @@ public final class AppendOnlyLogFlowable<T> extends Flowable<AppendOnlyLogMessag
     }
 
     @Override
-    protected void subscribeActual(Subscriber<? super AppendOnlyLogMessage<T>> s) {
-        s.onSubscribe(new AppendOnlyLogFlowableSubscription<>(appendOnlyLog, startingOffset, s));
+    protected void subscribeActual(Subscriber<? super AppendOnlyLogMessage<T>> subscriber) {
+        subscriber.onSubscribe(new AppendOnlyLogFlowableSubscription<>(appendOnlyLog, startingOffset, subscriber));
     }
 }

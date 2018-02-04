@@ -6,3 +6,6 @@ include 'broker-impl'
 
 include 'pubsub-api'
 include 'pubsub-impl'
+
+include 'polog-api'
+include 'polog-impl'

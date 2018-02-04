@@ -41,19 +41,19 @@ public final class SimpleLogStream implements LogStream {
     public FlowableOperator<Long, String> storeToLogStreamOperator() {
         return observer -> new Subscriber<String>() {
             @Override
-            public void onSubscribe(Subscription s) {
-                observer.onSubscribe(s);
+            public void onSubscribe(Subscription subscription) {
+                observer.onSubscribe(subscription);
             }
 
             @Override
-            public void onNext(String s) {
-                long messageId = addMessage(s);
+            public void onNext(String message) {
+                long messageId = addMessage(message);
                 observer.onNext(messageId);
             }
 
             @Override
-            public void onError(Throwable t) {
-                observer.onError(t);
+            public void onError(Throwable error) {
+                observer.onError(error);
             }
 
             @Override

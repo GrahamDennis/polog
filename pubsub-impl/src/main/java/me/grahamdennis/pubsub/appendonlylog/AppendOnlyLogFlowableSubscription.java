@@ -16,6 +16,7 @@
 
 package me.grahamdennis.pubsub.appendonlylog;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -58,9 +59,9 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
     }
 
     @Override
-    public void request(long n) {
-        if (SubscriptionHelper.validate(n)) {
-            BackpressureHelper.add(requested, n);
+    public void request(long count) {
+        if (SubscriptionHelper.validate(count)) {
+            BackpressureHelper.add(requested, count);
             requestPump();
         }
     }
@@ -75,10 +76,11 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
 
     private void requestPump() {
         if (pumpInProgress.getAndIncrement() == 0) {
-            executorService.submit(this::pump);
+            ListenableFuture<?> pumpFuture = executorService.submit(this::pump);
         }
     }
 
+    @SuppressWarnings("InnerAssignment")
     private void pump() {
         int missed = 1;
 
@@ -92,11 +94,11 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
                 continue;
             }
 
-            long r = requested.get();
+            long localRequested = requested.get();
             final long initialOffset = currentOffset.get();
             long offset = initialOffset;
 
-            while (r > 0) {
+            while (localRequested > 0) {
                 if (checkTerminated()) {
                     return;
                 }
@@ -105,8 +107,8 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
                 if (optionalValue.isPresent()) {
                     AppendOnlyLogMessage<T> message = AppendOnlyLogMessage.of(offset++, optionalValue.get());
                     subscriber.onNext(message);
-                    if (r != Long.MAX_VALUE) {
-                        r = requested.decrementAndGet();
+                    if (localRequested != Long.MAX_VALUE) {
+                        localRequested = requested.decrementAndGet();
                     }
                 } else {
                     subscribedToLog.incrementAndGet();
@@ -115,6 +117,7 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
             }
 
             currentOffset.compareAndSet(initialOffset, offset);
+
         } while ((missed = pumpInProgress.addAndGet(-missed)) != 0);
     }
 
@@ -123,9 +126,9 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
             return true;
         }
         if (done) {
-            Throwable e = error;
-            if (e != null) {
-                subscriber.onError(e);
+            Throwable localError = error;
+            if (localError != null) {
+                subscriber.onError(localError);
             } else {
                 subscriber.onComplete();
             }
@@ -142,11 +145,11 @@ public final class AppendOnlyLogFlowableSubscription<T> implements Subscription 
             if (complete) {
                 return;
             }
-            long r = requested.get();
-            if (r > 0) {
+            long localRequested = requested.get();
+            if (localRequested > 0) {
                 AppendOnlyLogMessage<T> logMessage = AppendOnlyLogMessage.of(offset, value);
                 subscriber.onNext(logMessage);
-                if (r != Long.MAX_VALUE) {
+                if (localRequested != Long.MAX_VALUE) {
                     requested.decrementAndGet();
                 }
             } else {

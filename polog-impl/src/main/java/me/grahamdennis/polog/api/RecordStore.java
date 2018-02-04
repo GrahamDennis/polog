@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-dependencies {
-    compile project(':pubsub-api')
-    compile 'io.reactivex.rxjava2:rxjava'
-    compile 'org.rocksdb:rocksdbjni'
+package me.grahamdennis.polog.api;
 
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
+import java.io.IOException;
+import java.util.Optional;
 
-    processor 'org.immutables:value'
-
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-api'
+public interface RecordStore {
+    void putRecord(Record record) throws IOException;
+    Optional<Record> getRecord(RecordId recordId) throws IOException;
+    boolean recordExists(RecordId recordId) throws IOException;
 }

@@ -36,19 +36,19 @@ public final class AppendOnlyLogStream implements LogStream {
     public FlowableOperator<Long, String> storeToLogStreamOperator() {
         return observer -> new Subscriber<String>() {
             @Override
-            public void onSubscribe(Subscription s) {
-                observer.onSubscribe(s);
+            public void onSubscribe(Subscription subscription) {
+                observer.onSubscribe(subscription);
             }
 
             @Override
-            public void onNext(String s) {
-                long messageId = appendOnlyLog.append(s);
+            public void onNext(String message) {
+                long messageId = appendOnlyLog.append(message);
                 observer.onNext(messageId);
             }
 
             @Override
-            public void onError(Throwable t) {
-                observer.onError(t);
+            public void onError(Throwable error) {
+                observer.onError(error);
             }
 
             @Override

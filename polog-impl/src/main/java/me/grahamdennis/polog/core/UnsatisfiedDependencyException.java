@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-dependencies {
-    compile project(':pubsub-api')
-    compile 'io.reactivex.rxjava2:rxjava'
-    compile 'org.rocksdb:rocksdbjni'
+package me.grahamdennis.polog.core;
 
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
+import me.grahamdennis.polog.api.RecordId;
 
-    processor 'org.immutables:value'
+public final class UnsatisfiedDependencyException extends Exception {
+    private final RecordId recordId;
 
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-api'
+    public UnsatisfiedDependencyException(String message, RecordId recordId) {
+        super(message);
+        this.recordId = recordId;
+    }
+
+    public RecordId getRecordId() {
+        return recordId;
+    }
 }

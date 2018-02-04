@@ -154,7 +154,7 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
 
     private PubSubProto.Message toProto(AppendOnlyLogMessage<String> message) {
         return PubSubProto.Message.newBuilder()
-                .setMessageId(message.id()+1)
+                .setMessageId(message.id() + 1)
                 .setValue(message.value())
                 .build();
     }
@@ -168,22 +168,22 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
             StreamObserver<T> responseObserver) {
         return new FlowableSubscriber<T>() {
             @Override
-            public void onSubscribe(Subscription s) {
+            public void onSubscribe(Subscription subscription) {
                 ServerCallStreamObserver<T> serverCallStreamObserver =
                         (ServerCallStreamObserver<T>) responseObserver;
-                serverCallStreamObserver.setOnCancelHandler(s::cancel);
+                serverCallStreamObserver.setOnCancelHandler(subscription::cancel);
                 // FIXME(gdennis): do this properly
-                s.request(Long.MAX_VALUE);
+                subscription.request(Long.MAX_VALUE);
             }
 
             @Override
-            public void onNext(T t) {
-                responseObserver.onNext(t);
+            public void onNext(T next) {
+                responseObserver.onNext(next);
             }
 
             @Override
-            public void onError(Throwable t) {
-                responseObserver.onError(t);
+            public void onError(Throwable error) {
+                responseObserver.onError(error);
             }
 
             @Override
@@ -196,21 +196,21 @@ public final class PubSubImpl extends PubSubGrpc.PubSubImplBase {
     private static <T> SingleObserver<T> toSingleObserver(StreamObserver<T> responseObserver) {
         return new SingleObserver<T>() {
             @Override
-            public void onSubscribe(Disposable d) {
+            public void onSubscribe(Disposable disposable) {
                 ServerCallStreamObserver<T> serverCallStreamObserver =
                         (ServerCallStreamObserver<T>) responseObserver;
-                serverCallStreamObserver.setOnCancelHandler(d::dispose);
+                serverCallStreamObserver.setOnCancelHandler(disposable::dispose);
             }
 
             @Override
-            public void onSuccess(T t) {
-                responseObserver.onNext(t);
+            public void onSuccess(T next) {
+                responseObserver.onNext(next);
                 responseObserver.onCompleted();
             }
 
             @Override
-            public void onError(Throwable e) {
-                responseObserver.onError(e);
+            public void onError(Throwable error) {
+                responseObserver.onError(error);
             }
         };
     }

@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-dependencies {
-    compile project(':pubsub-api')
-    compile 'io.reactivex.rxjava2:rxjava'
-    compile 'org.rocksdb:rocksdbjni'
+package me.grahamdennis.immutables;
 
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.immutables.value.Value;
 
-    processor 'org.immutables:value'
-
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-api'
+@Target({ElementType.PACKAGE, ElementType.TYPE})
+@Retention(RetentionPolicy.CLASS)
+@Value.Style(
+        visibility = Value.Style.ImplementationVisibility.PACKAGE,
+        builderVisibility = Value.Style.BuilderVisibility.PACKAGE,
+        of = "create",
+        get = "*",
+        defaults = @Value.Immutable(
+                copy = false))
+public @interface ImmutablesStyle {
 }

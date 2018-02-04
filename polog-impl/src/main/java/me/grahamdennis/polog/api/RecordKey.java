@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-dependencies {
-    compile project(':pubsub-api')
-    compile 'io.reactivex.rxjava2:rxjava'
-    compile 'org.rocksdb:rocksdbjni'
+package me.grahamdennis.polog.api;
 
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import me.grahamdennis.immutables.ImmutablesStyle;
+import org.immutables.value.Value;
 
-    processor 'org.immutables:value'
+@Value.Immutable
+@ImmutablesStyle
+@JsonSerialize(as = ImmutableRecordKey.class)
+@JsonDeserialize(as = ImmutableRecordKey.class)
+public interface RecordKey {
+    @JsonValue
+    @Value.Parameter
+    String key();
 
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-api'
+    static RecordKey of(String key) {
+        return ImmutableRecordKey.create(key);
+    }
 }

@@ -15,9 +15,12 @@
  */
 
 dependencies {
-    compile project(':pubsub-api')
+    compile project(':polog-api')
     compile 'io.reactivex.rxjava2:rxjava'
     compile 'org.rocksdb:rocksdbjni'
+    compile 'com.palantir.common:streams'
+    compile 'com.google.guava:guava'
+    compile 'com.fasterxml.jackson.core:jackson-databind'
 
     compile 'org.slf4j:slf4j-api'
     compile 'org.slf4j:slf4j-simple'

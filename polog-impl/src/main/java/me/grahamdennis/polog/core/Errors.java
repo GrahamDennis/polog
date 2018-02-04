@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-dependencies {
-    compile project(':pubsub-api')
-    compile 'io.reactivex.rxjava2:rxjava'
-    compile 'org.rocksdb:rocksdbjni'
+package me.grahamdennis.polog.core;
 
-    compile 'org.slf4j:slf4j-api'
-    compile 'org.slf4j:slf4j-simple'
+import me.grahamdennis.polog.api.RecordId;
 
-    processor 'org.immutables:value'
+/* package-private */ final class Errors {
+    private Errors() {}
 
-    testCompile 'io.grpc:grpc-testing'
-    testCompile 'junit:junit'
-    testCompile 'org.mockito:mockito-api'
+    // FIXME(gdennis): add the record with this dependency to the exception.
+    public static UnsatisfiedDependencyException unsatisfiedDependency(RecordId recordId) {
+        return new UnsatisfiedDependencyException(String.format("Record %s is a dependency of this batch, but it is "
+                + "neither in the batch, nor currently stored in the database.", recordId), recordId);
+    }
 }

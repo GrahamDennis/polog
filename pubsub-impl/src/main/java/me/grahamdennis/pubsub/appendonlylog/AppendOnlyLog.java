@@ -23,9 +23,9 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 public interface AppendOnlyLog<E> extends AutoCloseable {
     /**
-     * Atomically append an element to the log, and return its index in the log
+     * Atomically append an element to the log, and return its index in the log.
      * @param element element to append to the end of the log
-     * @return the committed index of {@code element} in the log.
+     * @return the committed index of {@code element} in the log
      */
     long append(E element);
 
@@ -33,7 +33,7 @@ public interface AppendOnlyLog<E> extends AutoCloseable {
      * Returns the element at the specified position in this log.
      * @param index index of the element to return
      * @return element at the specified position in this log
-     * @throws IndexOutOfBoundsException if the index is out of range.
+     * @throws IndexOutOfBoundsException if the index is out of range
      */
     E get(long index);
 
