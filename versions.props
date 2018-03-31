@@ -1,6 +1,6 @@
 com.palantir.baseline:* = 0.18.0
 com.google.protobuf:* = 3.5.1
-io.grpc:* = 1.8.0
+io.grpc:* = 1.11.0
 com.google.api.grpc:proto-google-common-protos = 1.0.0
 org.rocksdb:* = 5.9.2
 com.palantir.common:streams = 1.9.0
@@ -12,7 +12,8 @@ com.fasterxml.jackson.core:* = $JACKSON_VERSION
 org.slf4j:* = 1.7.25
 
 io.reactivex.rxjava2:rxjava = 2.1.8
-org.immutables:* = 2.5.5
+org.immutables:* = 2.5.6
 
 junit:junit = 4.12
 org.mockito:mockito-core = 1.9.5
+org.assertj:assertj-core = 3.9.1

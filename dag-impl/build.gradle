@@ -1,0 +1,13 @@
+dependencies {
+    compile project(':dag-api')
+
+    compile 'com.google.guava:guava'
+
+    compile 'org.slf4j:slf4j-api'
+    compile 'org.slf4j:slf4j-simple'
+
+    processor 'org.immutables:value'
+
+    testCompile 'junit:junit'
+    testCompile 'org.assertj:assertj-core'
+}

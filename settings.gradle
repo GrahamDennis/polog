@@ -9,3 +9,6 @@ include 'pubsub-impl'
 
 include 'polog-api'
 include 'polog-impl'
+
+include 'dag-api'
+include 'dag-impl'
