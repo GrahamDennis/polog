@@ -1,5 +1,5 @@
 com.palantir.baseline:* = 0.18.0
-com.google.protobuf:* = 3.5.1
+com.google.protobuf:* = 3.5.2
 io.grpc:* = 1.11.0
 com.google.api.grpc:proto-google-common-protos = 1.0.0
 org.rocksdb:* = 5.9.2

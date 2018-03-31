@@ -1,6 +1,9 @@
 dependencies {
     compile 'org.slf4j:slf4j-api'
 
+    compile 'com.fasterxml.jackson.core:jackson-databind'
+    compile 'com.google.guava:guava'
+
     processor 'org.immutables:value'
 
     testCompile 'junit:junit'
