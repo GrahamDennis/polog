@@ -1,6 +1,8 @@
 dependencies {
     compile project(':dag-api')
 
+    compile 'com.palantir.common:streams'
+
     compile 'org.slf4j:slf4j-api'
     compile 'org.slf4j:slf4j-simple'
 
@@ -8,4 +10,5 @@ dependencies {
 
     testCompile 'junit:junit'
     testCompile 'org.assertj:assertj-core'
+    testCompile 'guru.nidi:graphviz-java'
 }
