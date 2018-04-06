@@ -98,7 +98,7 @@ public final class Approximations {
             N node = orderedToVisit.first();
             int reachableCount = Graphs.reachableNodes(residual, node).size();
 
-            
+
         }
     }
 
