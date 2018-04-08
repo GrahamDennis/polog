@@ -18,8 +18,6 @@ package me.grahamdennis.dag;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
@@ -30,9 +28,7 @@ import com.google.common.graph.Graphs;
 import com.google.common.graph.ImmutableGraph;
 import com.google.common.graph.MutableGraph;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
-import java.util.SortedSet;
 
 public final class Approximations {
     private Approximations() {}
@@ -85,30 +81,6 @@ public final class Approximations {
             result.putEdge(edge.source(), edge.target());
         }
         return result;
-    }
-
-    public static <N> MutableGraph<N> residualGraph(Graph<N> graph, double fraction, Random random) {
-        checkArgument(graph.isDirected());
-
-        MutableGraph<N> residual = Graphs.copyOf(graph);
-
-        Set<N> toVisit = Sets.newHashSet(residual.nodes());
-        while (!toVisit.isEmpty()) {
-            SortedSet<N> orderedToVisit = remainingNodesOrderedByReachableCount(residual, toVisit);
-            N node = orderedToVisit.first();
-            int reachableCount = Graphs.reachableNodes(residual, node).size();
-
-
-        }
-    }
-
-    private static <N> SortedSet<N> remainingNodesOrderedByReachableCount(Graph<N> residual, Set<N> nodes) {
-        Ordering<N> ordering = Ordering.natural()
-                .onResultOf(node -> Graphs.reachableNodes(residual, node).size());
-
-        return ImmutableSortedSet.orderedBy(ordering)
-                .addAll(nodes)
-                .build();
     }
 
     private static final class BreadthFirstIterator<N> extends UnmodifiableIterator<N> {
