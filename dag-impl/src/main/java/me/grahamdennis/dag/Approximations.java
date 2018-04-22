@@ -18,21 +18,13 @@ package me.grahamdennis.dag;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Queues;
-import com.google.common.collect.Sets;
-import com.google.common.collect.UnmodifiableIterator;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
 import com.google.common.graph.ImmutableGraph;
 import com.google.common.graph.MutableGraph;
-import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
-import java.util.SortedSet;
 
 public final class Approximations {
     private Approximations() {}
@@ -87,55 +79,4 @@ public final class Approximations {
         return result;
     }
 
-    public static <N> MutableGraph<N> residualGraph(Graph<N> graph, double fraction, Random random) {
-        checkArgument(graph.isDirected());
-
-        MutableGraph<N> residual = Graphs.copyOf(graph);
-
-        Set<N> toVisit = Sets.newHashSet(residual.nodes());
-        while (!toVisit.isEmpty()) {
-            SortedSet<N> orderedToVisit = remainingNodesOrderedByReachableCount(residual, toVisit);
-            N node = orderedToVisit.first();
-            int reachableCount = Graphs.reachableNodes(residual, node).size();
-
-
-        }
-    }
-
-    private static <N> SortedSet<N> remainingNodesOrderedByReachableCount(Graph<N> residual, Set<N> nodes) {
-        Ordering<N> ordering = Ordering.natural()
-                .onResultOf(node -> Graphs.reachableNodes(residual, node).size());
-
-        return ImmutableSortedSet.orderedBy(ordering)
-                .addAll(nodes)
-                .build();
-    }
-
-    private static final class BreadthFirstIterator<N> extends UnmodifiableIterator<N> {
-        private final Graph<N> graph;
-        private final Queue<N> queue = Queues.newArrayDeque();
-        private final Set<N> visited = Sets.newHashSet();
-
-        private BreadthFirstIterator(Graph<N> graph, Set<? extends N> roots) {
-            this.graph = graph;
-            queue.addAll(roots);
-            visited.addAll(roots);
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !queue.isEmpty();
-        }
-
-        @Override
-        public N next() {
-            N current = queue.remove();
-            for (N successor : graph.successors(current)) {
-                if (visited.add(successor)) {
-                    queue.add(successor);
-                }
-            }
-            return current;
-        }
-    }
 }

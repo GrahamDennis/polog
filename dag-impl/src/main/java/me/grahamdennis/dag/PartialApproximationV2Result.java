@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.immutables;
+package me.grahamdennis.dag;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.OptionalInt;
+import java.util.Set;
+import me.grahamdennis.immutables.ImmutablesStyle;
 import org.immutables.value.Value;
 
-@Target({ElementType.PACKAGE, ElementType.TYPE})
-@Retention(RetentionPolicy.CLASS)
-@Value.Style(
-        visibility = Value.Style.ImplementationVisibility.PACKAGE,
-        builderVisibility = Value.Style.BuilderVisibility.PACKAGE,
-        of = "create",
-        get = "*",
-        overshadowImplementation = true,
-        defaults = @Value.Immutable(
-                copy = false))
-public @interface ImmutablesStyle {
+@Value.Immutable
+@ImmutablesStyle
+public interface PartialApproximationV2Result<N> {
+    Set<DirectedEdge<N>> cutEdges();
+    OptionalInt previousBreakIdx();
+
+    default int cost() {
+        return cutEdges().size();
+    }
+
+    static <N> Builder<N> builder() {
+        return new Builder<>();
+    }
+
+    final class Builder<N> extends ImmutablePartialApproximationV2Result.Builder<N> {}
 }

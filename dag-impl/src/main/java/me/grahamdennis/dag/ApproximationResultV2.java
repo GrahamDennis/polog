@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.immutables;
+package me.grahamdennis.dag;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.google.common.collect.SetMultimap;
+import com.google.common.graph.ImmutableGraph;
+import me.grahamdennis.immutables.ImmutablesStyle;
 import org.immutables.value.Value;
 
-@Target({ElementType.PACKAGE, ElementType.TYPE})
-@Retention(RetentionPolicy.CLASS)
-@Value.Style(
-        visibility = Value.Style.ImplementationVisibility.PACKAGE,
-        builderVisibility = Value.Style.BuilderVisibility.PACKAGE,
-        of = "create",
-        get = "*",
-        overshadowImplementation = true,
-        defaults = @Value.Immutable(
-                copy = false))
-public @interface ImmutablesStyle {
+@Value.Immutable
+@ImmutablesStyle
+public interface ApproximationResultV2<N> {
+    ImmutableGraph<N> approximation();
+    SetMultimap<N, N> sourceNodesByApproximationNode();
+
+    int cost();
+
+    static <N> Builder<N> builder() {
+        return new Builder<>();
+    }
+
+    final class Builder<N> extends ImmutableApproximationResultV2.Builder<N> {}
 }

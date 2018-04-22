@@ -20,6 +20,8 @@ import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 
 public final class TestGraphs {
+    private TestGraphs() {}
+
     public static MutableGraph<Integer> binaryTree(int depth) {
         MutableGraph<Integer> graph = GraphBuilder.directed()
                 .allowsSelfLoops(false)
@@ -39,7 +41,7 @@ public final class TestGraphs {
     public static MutableGraph<Integer> binaryDiamond(int depth) {
         MutableGraph<Integer> graph = binaryTree(depth);
 
-        for (int idx = (1 << (depth - 1)); idx < (1 << depth); idx++) {
+        for (int idx = 1 << (depth - 1); idx < (1 << depth); idx++) {
             graph.putEdge(2 * idx, -idx);
             graph.putEdge(2 * idx + 1, -idx);
         }

@@ -16,6 +16,8 @@
 
 package me.grahamdennis.dag;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.SetMultimap;
 import com.google.common.graph.Graph;
 import com.google.common.graph.ImmutableGraph;
 import com.google.common.graph.MutableGraph;
@@ -67,6 +69,26 @@ public class ApproximationsTest {
         writeToFile(toGraphViz(approximation.residual()), new File("build/binary-diamond-residual.svg"));
     }
 
+    @Test
+    public void canApproximateBinaryDiamondV2() throws IOException {
+        MutableGraph<Integer> binaryDiamond = TestGraphs.binaryDiamond(2);
+
+        writeToFile(
+                toGraphViz(ApproximationsV2.causalPowersetGraph(binaryDiamond)),
+                new File("build/binary-diamond-causal-powerset.svg"));
+
+        ApproximationResultV2<Integer> approximation =
+                ApproximationsV2.approximate(binaryDiamond, 2);
+
+        writeToFile(toGraphViz(binaryDiamond, approximation), new File("build/binary-diamond-v2.svg"));
+
+        ApproximationResultV2<Integer> approximation2 =
+                ApproximationsV2.approximate(binaryDiamond, 2,
+                        ImmutableList.of(1, 2, 4, 5, -2, 3, 6, 7, -3, -1));
+
+        writeToFile(toGraphViz(binaryDiamond, approximation2), new File("build/binary-diamond2-v2.svg"));
+    }
+
     private void writeToFile(Graphviz graphviz, File file) throws IOException {
         graphviz.engine(Engine.DOT)
                 .render(Format.SVG)
@@ -111,7 +133,56 @@ public class ApproximationsTest {
         return Graphviz.fromGraph(graph);
     }
 
+    private <N> Graphviz toGraphViz(Graph<N> sourceGraph, ApproximationResultV2<N> approximation) {
+        guru.nidi.graphviz.model.MutableGraph graph = Factory.mutGraph().setDirected(true);
+        SetMultimap<N, N> approximationNodesBySourceNodes = approximation.sourceNodesByApproximationNode();
+
+        Map<N, MutableNode> outerNodes = KeyedStream.of(sourceGraph.nodes())
+                .map(this::node)
+                .collectToMap();
+
+        for (MutableNode vizNode : outerNodes.values()) {
+            graph.add(vizNode);
+        }
+
+        Map<N, guru.nidi.graphviz.model.MutableGraph> subgraphs = KeyedStream.of(approximation.approximation().nodes())
+                .map(this::subgraph)
+                .collectToMap();
+
+        for (N approximationNode : approximationNodesBySourceNodes.keySet()) {
+            guru.nidi.graphviz.model.MutableGraph subgraph = subgraphs.get(approximationNode);
+
+            Set<N> blockNodes = approximationNodesBySourceNodes.get(approximationNode);
+            Map<N, MutableNode> nodes = KeyedStream.of(blockNodes)
+                    .map(this::node)
+                    .collectToMap();
+            for (MutableNode vizNode : nodes.values()) {
+                subgraph.add(vizNode);
+            }
+            for (N sourceNode : blockNodes) {
+                MutableNode vizSourceNode = nodes.get(sourceNode);
+                for (N successorNode : sourceGraph.successors(sourceNode)) {
+                    if (blockNodes.contains(successorNode)) {
+                        vizSourceNode.addLink(nodes.get(successorNode));
+                    } else {
+                        outerNodes.get(sourceNode).addLink(outerNodes.get(successorNode));
+                    }
+                }
+            }
+            graph.graphs().add(subgraph);
+        }
+
+        return Graphviz.fromGraph(graph);
+    }
+
     private <N> MutableNode node(N node) {
         return Factory.mutNode(node.toString());
+    }
+
+    private <N> guru.nidi.graphviz.model.MutableGraph subgraph(N approximateNode) {
+        return Factory.mutGraph(approximateNode.toString())
+                .setDirected(true)
+                .setCluster(true)
+                .generalAttrs().add(Color.BLUE);
     }
 }

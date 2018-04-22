@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package me.grahamdennis.immutables;
+package me.grahamdennis.dag;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import me.grahamdennis.immutables.ImmutablesStyle;
 import org.immutables.value.Value;
 
-@Target({ElementType.PACKAGE, ElementType.TYPE})
-@Retention(RetentionPolicy.CLASS)
-@Value.Style(
-        visibility = Value.Style.ImplementationVisibility.PACKAGE,
-        builderVisibility = Value.Style.BuilderVisibility.PACKAGE,
-        of = "create",
-        get = "*",
-        overshadowImplementation = true,
-        defaults = @Value.Immutable(
-                copy = false))
-public @interface ImmutablesStyle {
+@Value.Immutable
+@ImmutablesStyle
+public interface DirectedEdge<N> {
+    @Value.Parameter
+    N from();
+
+    @Value.Parameter
+    N to();
+
+    static <N> DirectedEdge<N> of(N from, N to) {
+        return ImmutableDirectedEdge.create(from, to);
+    }
 }
