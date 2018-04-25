@@ -16,7 +16,6 @@
 
 package me.grahamdennis.dag;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import com.google.common.graph.Graph;
 import com.google.common.graph.ImmutableGraph;
@@ -71,22 +70,28 @@ public class ApproximationsTest {
 
     @Test
     public void canApproximateBinaryDiamondV2() throws IOException {
-        MutableGraph<Integer> binaryDiamond = TestGraphs.binaryDiamond(2);
+        MutableGraph<Integer> binaryDiamond = TestGraphs.binaryDiamond(3);
+        int maximumBlockSize = binaryDiamond.nodes().size() / 2;
 
-        writeToFile(
-                toGraphViz(ApproximationsV2.causalPowersetGraph(binaryDiamond)),
-                new File("build/binary-diamond-causal-powerset.svg"));
+//        writeToFile(
+//                toGraphViz(ApproximationsV2.causalPowersetGraph(binaryDiamond)),
+//                new File("build/binary-diamond-causal-powerset.svg"));
 
         ApproximationResultV2<Integer> approximation =
-                ApproximationsV2.approximate(binaryDiamond, 2);
+                ApproximationsV2.approximate(binaryDiamond, maximumBlockSize);
 
         writeToFile(toGraphViz(binaryDiamond, approximation), new File("build/binary-diamond-v2.svg"));
 
-        ApproximationResultV2<Integer> approximation2 =
-                ApproximationsV2.approximate(binaryDiamond, 2,
-                        ImmutableList.of(1, 2, 4, 5, -2, 3, 6, 7, -3, -1));
+//        ApproximationResultV2<Integer> approximation2 =
+//                ApproximationsV2.approximate(binaryDiamond, 5,
+//                        ImmutableList.of(1, 2, 4, 5, -2, 3, 6, 7, -3, -1));
+//
+//        writeToFile(toGraphViz(binaryDiamond, approximation2), new File("build/binary-diamond2-v2.svg"));
+//
+        ApproximationResultV2<Integer> bestApproximation = ApproximationsV2.approximateFull(binaryDiamond,
+                maximumBlockSize);
 
-        writeToFile(toGraphViz(binaryDiamond, approximation2), new File("build/binary-diamond2-v2.svg"));
+        writeToFile(toGraphViz(binaryDiamond, bestApproximation), new File("build/binary-diamond-v2-best.svg"));
     }
 
     private void writeToFile(Graphviz graphviz, File file) throws IOException {

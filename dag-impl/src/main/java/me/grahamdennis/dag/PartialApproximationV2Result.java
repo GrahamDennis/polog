@@ -16,24 +16,24 @@
 
 package me.grahamdennis.dag;
 
-import java.util.OptionalInt;
+import java.util.Optional;
 import java.util.Set;
 import me.grahamdennis.immutables.ImmutablesStyle;
 import org.immutables.value.Value;
 
 @Value.Immutable
 @ImmutablesStyle
-public interface PartialApproximationV2Result<N> {
+public interface PartialApproximationV2Result<K, N> {
     Set<DirectedEdge<N>> cutEdges();
-    OptionalInt previousBreakIdx();
+    Optional<K> previousBreakKey();
 
     default int cost() {
         return cutEdges().size();
     }
 
-    static <N> Builder<N> builder() {
+    static <K, N> Builder<K, N> builder() {
         return new Builder<>();
     }
 
-    final class Builder<N> extends ImmutablePartialApproximationV2Result.Builder<N> {}
+    final class Builder<K, N> extends ImmutablePartialApproximationV2Result.Builder<K, N> {}
 }

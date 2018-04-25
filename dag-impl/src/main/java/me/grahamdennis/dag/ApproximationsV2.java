@@ -57,6 +57,49 @@ public final class ApproximationsV2 {
         return approximate(graph, maximumBlockSize, topologicalOrder);
     }
 
+    public static <N> ApproximationResultV2<N> approximateFull(Graph<N> graph, int maximumBlockSize) {
+        checkArgument(graph.isDirected());
+        checkArgument(!graph.allowsSelfLoops());
+        checkArgument(!Graphs.hasCycle(graph));
+
+        Map<Set<N>, PartialApproximationV2Result<Set<N>, N>> partialResults =
+                runFullKernighanDynamicProgramming(graph, maximumBlockSize);
+
+        Set<N> current = ImmutableSet.of();
+        SetMultimap<N, N> sourcesNodesByApproximateNode = MultimapBuilder.hashKeys().hashSetValues().build();
+        Map<N, N> approximateNodeBySourceNode = Maps.newHashMap();
+        while (partialResults.get(current).previousBreakKey().isPresent()) {
+            Set<N> previousBreak = partialResults.get(current).previousBreakKey().get();
+            Set<N> block = ImmutableSet.copyOf(Sets.difference(previousBreak, current));
+            N approximateNode = block.iterator().next();
+            for (N blockNode : block) {
+                sourcesNodesByApproximateNode.put(approximateNode, blockNode);
+                approximateNodeBySourceNode.put(blockNode, approximateNode);
+            }
+
+            current = previousBreak;
+        }
+
+        MutableGraph<N> approximatedGraph = GraphBuilder.directed().build();
+        for (N fromNode : graph.nodes()) {
+            for (N toNode : graph.successors(fromNode)) {
+                N approximatedFrom = approximateNodeBySourceNode.get(fromNode);
+                N approximatedTo = approximateNodeBySourceNode.get(toNode);
+                if (!approximatedFrom.equals(approximatedTo)) {
+                    approximatedGraph.putEdge(approximatedFrom, approximatedTo);
+                }
+            }
+        }
+
+        int cost = partialResults.get(ImmutableSet.<N>of()).cost();
+
+        return ApproximationResultV2.<N>builder()
+                .cost(cost)
+                .sourceNodesByApproximationNode(sourcesNodesByApproximateNode)
+                .approximation(ImmutableGraph.copyOf(approximatedGraph))
+                .build();
+    }
+
     /**
      * Kernighan's Algorithm [Kernighan:1971].
      */
@@ -65,7 +108,7 @@ public final class ApproximationsV2 {
         checkArgument(isTopologicalOrder(topologicalOrder, graph));
         ToIntFunction<N> nodeIndexFunction = createNodeIndexFunction(topologicalOrder);
 
-        List<PartialApproximationV2Result<N>> partialResults = runKernighanDynamicProgramming(
+        List<PartialApproximationV2Result<Integer, N>> partialResults = runKernighanDynamicProgramming(
                 graph,
                 maximumBlockSize,
                 topologicalOrder,
@@ -74,8 +117,8 @@ public final class ApproximationsV2 {
         int currentBreakIdx = topologicalOrder.size();
         SetMultimap<N, N> sourceNodesByApproximateNode = MultimapBuilder.hashKeys().hashSetValues().build();
         Map<N, N> approximateNodeBySourceNode = Maps.newHashMap();
-        while (partialResults.get(currentBreakIdx).previousBreakIdx().isPresent()) {
-            int previousBreakIdx = partialResults.get(currentBreakIdx).previousBreakIdx().getAsInt();
+        while (partialResults.get(currentBreakIdx).previousBreakKey().isPresent()) {
+            int previousBreakIdx = partialResults.get(currentBreakIdx).previousBreakKey().get();
             N previousBreakNode = topologicalOrder.get(previousBreakIdx);
             for (N node : topologicalOrder.subList(previousBreakIdx, currentBreakIdx)) {
                 sourceNodesByApproximateNode.put(previousBreakNode, node);
@@ -96,7 +139,7 @@ public final class ApproximationsV2 {
             }
         }
 
-        PartialApproximationV2Result<N> lastPartialResult = Iterables.getLast(partialResults);
+        PartialApproximationV2Result<Integer, N> lastPartialResult = Iterables.getLast(partialResults);
 
         return ApproximationResultV2.<N>builder()
                 .cost(lastPartialResult.cost())
@@ -105,11 +148,11 @@ public final class ApproximationsV2 {
                 .build();
     }
 
-    private static <N> List<PartialApproximationV2Result<N>> runKernighanDynamicProgramming(Graph<N> graph,
+    private static <N> List<PartialApproximationV2Result<Integer, N>> runKernighanDynamicProgramming(Graph<N> graph,
             int maximumBlockSize, List<N> topologicalOrder, ToIntFunction<N> nodeIndexFunction) {
-        List<PartialApproximationV2Result<N>> partialResults =
+        List<PartialApproximationV2Result<Integer, N>> partialResults =
                 Lists.newArrayListWithCapacity(topologicalOrder.size() + 1);
-        partialResults.add(PartialApproximationV2Result.<N>builder().build());
+        partialResults.add(PartialApproximationV2Result.<Integer, N>builder().build());
 
         for (int idx = 1; idx <= topologicalOrder.size(); idx++) {
             partialResults.add(null);
@@ -124,15 +167,16 @@ public final class ApproximationsV2 {
                                 .map(successor -> DirectedEdge.of(node, successor)))
                         .collect(Collectors.toSet());
 
-                PartialApproximationV2Result<N> previousPartialResult = partialResults.get(previousBreakIdx);
+                PartialApproximationV2Result<Integer, N> previousPartialResult = partialResults.get(previousBreakIdx);
 
-                PartialApproximationV2Result<N> partialResult = PartialApproximationV2Result.<N>builder()
-                        .previousBreakIdx(previousBreakIdx)
-                        .addAllCutEdges(brokenEdges)
-                        .addAllCutEdges(previousPartialResult.cutEdges())
-                        .build();
+                PartialApproximationV2Result<Integer, N> partialResult =
+                        PartialApproximationV2Result.<Integer, N>builder()
+                                .previousBreakKey(previousBreakIdx)
+                                .addAllCutEdges(brokenEdges)
+                                .addAllCutEdges(previousPartialResult.cutEdges())
+                                .build();
 
-                PartialApproximationV2Result<N> currentBest = partialResults.get(idx);
+                PartialApproximationV2Result<Integer, N> currentBest = partialResults.get(idx);
 
                 if (currentBest == null || partialResult.cost() < currentBest.cost()) {
                     partialResults.set(idx, partialResult);
@@ -142,6 +186,74 @@ public final class ApproximationsV2 {
             }
         }
         return partialResults;
+    }
+
+    private static <N> Map<Set<N>, PartialApproximationV2Result<Set<N>, N>> runFullKernighanDynamicProgramming(
+            Graph<N> graph, int maximumBlockSize) {
+        Map<Set<N>, PartialApproximationV2Result<Set<N>, N>> partialResults = Maps.newHashMap();
+        ImmutableGraph<Set<N>> causalPowersetGraph = causalPowersetGraph(graph);
+        Queue<Set<N>> queue = Queues.newArrayDeque();
+        Set<Set<N>> visited = Sets.newHashSet();
+
+        Set<N> root = ImmutableSet.copyOf(graph.nodes());
+        queue.add(root);
+        visited.add(root);
+        partialResults.put(root, PartialApproximationV2Result.<Set<N>, N>builder().build());
+
+        while (!queue.isEmpty()) {
+            Set<N> current = queue.remove();
+            List<Set<N>> ancestorsToConsider = getAncestorsToConsider(causalPowersetGraph, current, maximumBlockSize);
+
+            for (Set<N> previousBreak : ancestorsToConsider) {
+                Set<N> block = ImmutableSet.copyOf(Sets.difference(previousBreak, current));
+
+                Set<DirectedEdge<N>> brokenEdges = block.stream()
+                        .flatMap(blockNode -> graph.successors(blockNode).stream()
+                                .filter(successor -> !block.contains(successor))
+                                .map(successor -> DirectedEdge.of(blockNode, successor)))
+                        .collect(Collectors.toSet());
+
+                PartialApproximationV2Result<Set<N>, N> previousPartialResult = partialResults.get(previousBreak);
+
+                PartialApproximationV2Result<Set<N>, N> partialResult =
+                        PartialApproximationV2Result.<Set<N>, N>builder()
+                                .previousBreakKey(previousBreak)
+                                .addAllCutEdges(brokenEdges)
+                                .addAllCutEdges(previousPartialResult.cutEdges())
+                                .build();
+
+                PartialApproximationV2Result<Set<N>, N> currentBest = partialResults.get(current);
+
+                if (currentBest == null || partialResult.cost() < currentBest.cost()) {
+                    partialResults.put(current, partialResult);
+                }
+            }
+
+            for (Set<N> successor : causalPowersetGraph.successors(current)) {
+                if (visited.add(successor)) {
+                    queue.add(successor);
+                }
+            }
+        }
+
+        return partialResults;
+    }
+
+    private static <N> List<Set<N>> getAncestorsToConsider(Graph<Set<N>> causalPowersetGraph, Set<N> current,
+            int maximumBlockSize) {
+        List<Set<N>> result = Lists.newArrayList();
+        Set<Set<N>> next = ImmutableSet.of(current);
+
+        for (int blockSize = 0; blockSize < maximumBlockSize; blockSize++) {
+            Set<Set<N>> predecessors = next.stream()
+                    .flatMap(nodes -> causalPowersetGraph.predecessors(nodes).stream())
+                    .collect(Collectors.toSet());
+            result.addAll(predecessors);
+
+            next = predecessors;
+        }
+
+        return result;
     }
 
     private static <N> int cost(int previousBreakIdx, int currentBreakIdx, List<N> topologicalOrder) {
